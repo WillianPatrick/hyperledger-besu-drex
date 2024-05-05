@@ -1,0 +1,234 @@
+name: hyperledger-besu-nodes
+x-besu-def:
+  &besu-def
+  restart: "on-failure"
+  image: hyperledger/besu:latest
+  entrypoint:
+    - /bin/bash
+    - -c
+    - |
+      cp "/config/genesis.json" /opt/besu/genesis.json
+      /opt/besu/bin/besu --genesis-file=/opt/besu/genesis.json --data-path=/opt/besu/data \
+      --config-file=/config/config.toml \
+      --rpc-http-api=ETH,NET,QBFT;
+
+x-blockscout-ref:
+  &blockscout-def
+  image: consensys/blockscout:v4.1.5-beta
+  container_name: blockscout
+  restart: "no"
+  environment:
+    - PORT=4000
+    - ECTO_USE_SSL=false
+    - DATABASE_URL=postgresql://postgres:postgres@blockscoutpostgres:5432/postgres?ssl=false
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - NETWORK=besu
+    - NETWORK=besu
+    - SUBNETWORK=Besu
+    - CHAIN_ID=1217
+    - COIN=ETH
+    - ETHEREUM_JSONRPC_VARIANT=geth
+    - ETHEREUM_JSONRPC_TRANSPORT=http
+    - ETHEREUM_JSONRPC_HTTP_URL=http://bootnode:8545
+    - ETHEREUM_JSONRPC_TRACE_URL=http://bootnode:8545
+    - ETHEREUM_JSONRPC_WS_URL=ws://bootnode:8546
+  entrypoint:
+    - /bin/sh
+    - -c
+    - |
+      cd /opt/app/;otelcollector-def
+      echo $$MIX_ENV && mix do ecto.create, ecto.migrate; mix phx.server;
+  depends_on:
+    - blockscoutpostgres
+  links:
+    - blockscoutpostgres
+  ports:
+    - 26000:4000
+
+x-blockscoutpostgres-ref:
+  &blockscoutpostgres-def
+  image: postgres:13.6-alpine
+  restart: "on-failure"
+  container_name: blockscoutpostgres
+  environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_HOST_AUTH_METHOD=trust
+  volumes:
+    - blockscoutpostgres:/var/lib/postgresql/data
+  ports:
+    - 5432
+  healthcheck:
+    test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+    interval: 5s
+    timeout: 10s
+    retries: 5
+
+services:
+  bootnode:
+    << : *besu-def
+    container_name: bootnode
+    ports:
+      - 8545:8545/tcp
+      - 30303
+      - 9545
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=bootnode,service.version=latest
+      - NODE_ID=1
+    labels:
+      - "consensus=besu"
+    volumes:
+      - ./config/:/config       
+      - ./keys/bootnode/key:/opt/besu/keys/key
+      - ./data/nodes/bootnode/database:/tmp/besu
+      - ./data/nodes/bootnode/:/opt/besu/data
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.10
+
+  validator1:
+    << : *besu-def
+    container_name: validator1
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=validator1,service.version=latest
+      - NODE_ID=2      
+    labels:
+      - "consensus=besu"      
+    volumes:
+      - ./config/:/config       
+
+      - ./keys/validator1/key:/opt/besu/keys/key
+      - ./data/nodes/validator1/database:/tmp/besu
+      - ./data/nodes/validator1/:/opt/besu/data
+    depends_on:
+      - bootnode
+    ports:
+      - 21001:8545/tcp
+      - 30303
+      - 9545
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.11
+
+  validator2:
+    << : *besu-def
+    ports:
+      - 21002:8545/tcp
+      - 30303
+      - 9545
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=validator2,service.version=latest
+      - NODE_ID=3      
+    labels:
+      - "consensus=besu"
+    volumes:
+      - ./config/:/config    
+
+      - ./keys/validator2/key:/opt/besu/keys/key
+      - ./data/nodes/validator2/database:/tmp/besu
+      - ./data/nodes/validator2/:/opt/besu/data
+    depends_on:
+      - bootnode
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.12
+
+  if1:
+    << : *besu-def
+    ports:
+      - 21003:8545/tcp  
+      - 30303
+      - 9545
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=if1,service.version=latest
+      - NODE_ID=4      
+    volumes:
+      - ./config/:/config    
+      - ./keys/if1/key:/opt/besu/keys/key
+      - ./data/nodes/if1/database:/tmp/besu
+      - ./data/nodes/if1/:/opt/besu/data
+    depends_on:
+      - bootnode
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.13
+
+  if2:
+    << : *besu-def
+    ports:
+      - 21004:8545/tcp     
+      - 30303
+      - 9545
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=if2,service.version=latest
+      - NODE_ID=5      
+    volumes:
+      - ./config/:/config
+      - ./keys/if2/key:/opt/besu/keys/key
+      - ./data/nodes/if2/database:/tmp/besu
+      - ./data/nodes/if2:/opt/besu/data
+    depends_on:
+      - bootnode
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.14    
+
+
+# Extensions
+
+  prometheus:
+    image: "prom/prometheus:v2.46.0"
+    volumes:
+      - ./config/extensions/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/extensions/prometheus/:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml 
+    ports:
+      - 9090:9090/tcp
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.32
+
+  grafana:
+    image: "grafana/grafana:10.1.0"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_USERS_VIEWERS_CAN_EDIT=true
+    volumes:
+      - ./config/extensions/grafana/provisioning/:/etc/grafana/provisioning/
+      - ./data/extensions/grafana/:/var/lib/grafana
+    ports:
+      - 3000:3000/tcp
+    depends_on:  
+      - prometheus
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.33
+
+  blockscout:
+    << : *blockscout-def
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.51
+
+  blockscoutpostgres:
+    << : *blockscoutpostgres-def
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.52
+
+volumes:
+  public-keys:
+  prometheus:
+  grafana:
+  blockscoutpostgres:
+
+networks:
+  besu-network:
+    name: besu-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.239.0/24
+
