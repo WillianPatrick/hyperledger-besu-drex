@@ -34,7 +34,8 @@
      ```
 
     - **Sample generated node keys on struct folders and files**
-        ![Sample log generated node keys](/images/generate-keys.png)![Config struct folders generated](/images/config-folders-files.png)![Keys struct folders generated](/images/keys-folders-files.png)!!
+        ![Sample log generated node keys](/images/generate-keys.png)
+        ![Config struct folders generated](/images/config-folders-files.png)  ![Keys struct folders generated](/images/keys-folders-files.png)
 
 
 2. Up Docker Compose
