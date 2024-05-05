@@ -53,3 +53,14 @@
      
     - **Sample generated docker compose up**
      - ![Sample log generated up services](/images/docker-compose-up.png)
+
+
+3. **Services**
+    - **Blockscout on http://localhost:26000/**
+     - ![Prometheus](/images/service-blockscout.png)
+
+    - **Grafana on http://localhost:3000/**
+     - ![Grafana](/images/service-grafana.png)
+
+    - **Prometheus on http://localhost:9090/**
+     - ![Prometheus](/images/service-prometheus.png)
