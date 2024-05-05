@@ -33,7 +33,9 @@
      ./1-generate-node-keys.ps1
      ```
 
- ![Sample log generated node keys](/images/generate-keys.png)    
+    - **Sample generated node keys on struct folders and files**
+        ![Sample log generated node keys](/images/generate-keys.png)![Keys struct folders generated](/images/keys-folders-files.png)
+
 
 2. Up Docker Compose
    - Creates Docker containers for nodes and extension services
