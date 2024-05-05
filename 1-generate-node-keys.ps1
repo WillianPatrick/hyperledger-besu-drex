@@ -109,15 +109,9 @@ function generate_static_config($static_nodes) {
 "@ | Out-File "./config/static-nodes.json"
 }
     
-# Create a directory for config if it doesn't exist
-Write-Host "Setting up configuration..."
-New-Item -Path "config" -ItemType Directory -Force | Out-Null
-Copy-Item "qbftConfigFile.json" -Destination "config/"
 
 # Loop to setup each node
 Write-Host "Setting up nodes..."
-
-
 generate_keys "bootnode"
 generate_keys "validator1"
 generate_keys "validator2"

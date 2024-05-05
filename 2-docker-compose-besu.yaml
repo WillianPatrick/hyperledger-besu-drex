@@ -10,7 +10,9 @@ x-besu-def:
       cp "/config/genesis.json" /opt/besu/genesis.json
       /opt/besu/bin/besu --genesis-file=/opt/besu/genesis.json --data-path=/opt/besu/data \
       --config-file=/config/config.toml \
-      --rpc-http-api=ETH,NET,QBFT;
+      --p2p-host=$$(hostname -i) \
+      --rpc-http-api=WEB3,ETH,NET,TRACE,DEBUG,ADMIN,TXPOOL,QBFT \
+      --rpc-ws-api=WEB3,ETH,NET,TRACE,DEBUG,ADMIN,TXPOOL,QBFT ;      
 
 x-blockscout-ref:
   &blockscout-def
@@ -205,6 +207,27 @@ services:
     networks:
       besu-network:
         ipv4_address: 172.16.239.33
+
+  loki:
+    image: "grafana/loki:2.8.4"
+    volumes:
+      - ./config/extensions/grafana/loki/loki.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - 3100:3100/tcp
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.34
+
+  promtail:
+    image: "grafana/promtail:2.8.4"
+    volumes:
+      - ./config/extensions/grafana/promtail/logs:/var/log
+      - ./config/extensions/grafana/promtail/promtail.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      besu-network:
+        ipv4_address: 172.16.239.35
 
   blockscout:
     << : *blockscout-def
