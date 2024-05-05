@@ -33,7 +33,7 @@
      ./1-generate-node-keys.ps1
      ```
 
- ![Sample log generated node keys](\images\generate-keys.png)    
+ ![Sample log generated node keys](/images/generate-keys.png)    
 
 2. Up Docker Compose
    - Creates Docker containers for nodes and extension services
