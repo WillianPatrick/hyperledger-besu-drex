@@ -48,5 +48,8 @@
      ```
    - **Command:**
      ```
-     docker compose -f ".\2-docker-compose-besu-nodes.yaml" up -d --build
+     docker compose -f ".\2-docker-compose-besu.yaml" up -d --build
      ```
+     
+    - **Sample generated docker compose up**
+     - ![Sample log generated up services](/images/docker-compose-up.png)
