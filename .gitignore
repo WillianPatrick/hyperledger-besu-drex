@@ -5,3 +5,11 @@ config/static-nodes.json
 data
 keys
 logs
+1-k8-hyperledger-besu-validators.yaml
+compose-dev.yaml
+K8s_Combined.yaml
+K8s_ConfigMap.yaml
+K8s_Deployment_Bootnode.yaml
+K8s_PersistentVolume.yaml
+K8s_Service_Bootnode.yaml
+kubernetes_manifests.yaml

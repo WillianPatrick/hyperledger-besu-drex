@@ -1,8 +1,10 @@
+version: "3.4"
+
 name: hyperledger-besu-nodes
 x-besu-def:
   &besu-def
   restart: "on-failure"
-  image: hyperledger/besu:latest
+  image: hyperledger/besu:23.10.1
   entrypoint:
     - /bin/bash
     - -c
@@ -11,6 +13,7 @@ x-besu-def:
       /opt/besu/bin/besu --genesis-file=/opt/besu/genesis.json --data-path=/opt/besu/data \
       --config-file=/config/config.toml \
       --p2p-host=$$(hostname -i) \
+      --host-allowlist="*" --rpc-http-cors-origins="all" \
       --rpc-http-api=WEB3,ETH,NET,TRACE,DEBUG,ADMIN,TXPOOL,QBFT \
       --rpc-ws-api=WEB3,ETH,NET,TRACE,DEBUG,ADMIN,TXPOOL,QBFT ;      
 
@@ -222,7 +225,7 @@ services:
   promtail:
     image: "grafana/promtail:2.8.4"
     volumes:
-      - ./config/extensions/grafana/promtail/logs:/var/log
+      - ./data/extensions/grafana/promtail/logs:/var/log
       - ./config/extensions/grafana/promtail/promtail.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     networks:
